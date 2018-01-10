@@ -1,1 +1,4 @@
 # SmartClicker
+
+AutoClicker for OSRS. 
+
