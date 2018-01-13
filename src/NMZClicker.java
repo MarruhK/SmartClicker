@@ -10,6 +10,7 @@ class NMZClicker extends SmartClicker {
         // Begin auto clicking.
         while (continueClicking) {
             elapsedTime = System.currentTimeMillis() - startingTime;
+            beforeClickTime = System.currentTimeMillis();
             doubleClick(elapsedTime);
 
             // 35s-56s
@@ -18,6 +19,7 @@ class NMZClicker extends SmartClicker {
             } catch (InterruptedException ex) {
                 System.out.println("DID NOT SLEEP");
             }
+            writeTime(System.currentTimeMillis() - beforeClickTime);
         }
     }
 }
