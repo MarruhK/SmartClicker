@@ -1,11 +1,13 @@
 import java.awt.*;
 import java.awt.event.InputEvent;
+import java.io.IOException;
 
 abstract class SmartClicker{
     Robot clicker;
     private double randomizingMultiplier;
     boolean continueClicking = true;
     long startingTime;
+    long beforeClickTime;
     long elapsedTime;
 
     // If i call super() in sub-c will this be called twice or once?
@@ -52,17 +54,24 @@ abstract class SmartClicker{
      * @param elapsedTime The time, in milliseconds, the {@code SmartClicker} has been running.
      */
     final void doubleClick(long elapsedTime) {
-        singleClick(elapsedTime);
-        clicker.delay(timeBetweenSpamClicks(elapsedTime));
-        singleClick(elapsedTime);
+        singleClick();
+        int time = timeBetweenSpamClicks(elapsedTime);
+        clicker.delay(time);
+        singleClick();
+
+        try {
+            GUI.writer.write("Time between clicks in double click: " + time + " ms");
+            GUI.writer.write(System.getProperty( "line.separator" ));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
      * Mimics a single click.
      *
-     * @param elapsedTime The time, in milliseconds, the {@code SmartClicker} has been running.
      */
-    final void singleClick(long elapsedTime){
+    final void singleClick(){
         clicker.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         clicker.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     }
@@ -82,5 +91,14 @@ abstract class SmartClicker{
         }
 
         startingTime = System.currentTimeMillis();
+    }
+
+    final void writeTime(long time){
+        try {
+            GUI.writer.write("Itteration time: " + time + " ms");
+            GUI.writer.write(System.getProperty( "line.separator" ));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
