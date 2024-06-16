@@ -7,31 +7,22 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Date;
 
-/* Used for:
-    Alching
-    Thieving, Knights
-    NMZ rapid heal
-    Other AC uses
-    Record speed of user clicks.
- */
 class GUI extends JFrame {
 
     private JComboBox box;
-    private long currentTime = 0;       // Time since execution, in seconds.
-    private SmartClicker clicker;       // So both IC can access.
-    private String clickerType;
+    private AbstractClicker clicker;       // So both IC can access.
 
     public static FileWriter writer;    // Why do I need this to be static
 
     GUI() {
+        System.out.println("Initializing GUI.");
+
         // Panels
         JPanel comboBoxPanel = new JPanel();
         JPanel mainButtonPanel = new JPanel();
         JPanel subButtonPanel1 = new JPanel();
         JPanel subButtonPanel2 = new JPanel();
 
-
-        // COMPONENTS
         // Buttons
         JButton startButton = new JButton("START");
         JButton stopButton = new JButton("STOP");
@@ -40,8 +31,8 @@ class GUI extends JFrame {
         startButton.setPreferredSize(new Dimension(150,30));
         stopButton.setPreferredSize(new Dimension(150,30));
 
-        // combobox
-        String[] boxValues = {"", "High Alch", "Knights Thieving", "NMX Rapid Heal"};
+        // Combo box
+        String[] boxValues = {"", "High Alch", "NMZ"};
         box = new JComboBox(boxValues);
         box.setPrototypeDisplayValue("I THINK THIS SHOULD BE GOOD");
 
@@ -65,22 +56,16 @@ class GUI extends JFrame {
         add(BorderLayout.CENTER, mainButtonPanel);
 
         // Frame properties
+        setTitle("Marruhk's Smart Clicker");
         setSize(new Dimension(400, 120));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
-        setTitle("Marruhk's Smart Clicker");
     }
 
-    // Poly to get proper clicker
-    private SmartClicker getSmartClicker(int index) {
+    private AbstractClicker getSmartClicker(int index) {
         if (index == 1) {
-            clickerType = "High Alcher";
             return new AlchemyClicker();
         } else if (index == 2) {
-            clickerType = "Knight's Thiever";
-            return new KnightsClicker();
-        } else if (index == 3) {
-            clickerType = "NMZ Clicker";
             return new NMZClicker();
         } else {
             JOptionPane.showMessageDialog(this,
@@ -91,37 +76,42 @@ class GUI extends JFrame {
         }
     }
 
-    // INNER CLASSES
     class startClicker implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-
             clicker = getSmartClicker(box.getSelectedIndex());
-
-            // Write Date
 
             // Create Directory called "logs"
             File dir = new File("session logs");
-            if (!dir.exists()){
-                dir.mkdir();
+            if (!dir.exists()) {
+                if (!dir.mkdir()) {
+                    System.out.println("Failed to create directory!");
+                    return;
+                }
             }
+            System.out.println("Directory created at: " + dir.getAbsolutePath());
 
-            // Store textfiles in the directory
+            // Store text files in the directory
             Date today = new Date();
-
-            try{
-                writer = new FileWriter(new File(dir, String.format("%tY-%tm-%td TIME %tT", today, today, today, today)
-                        .replaceAll(":", " ") + ".txt"));
-                writer.write("SmartClicker has Begun! Type selected: " + clickerType);
-                writer.write("------------------------------------------------------------");
-                writer.write(System.getProperty( "line.separator" ));
-            } catch (IOException ex){
+            try {
+                writer = new FileWriter(
+                    new File(dir, String.format("%tY-%tm-%td TIME %tT", today, today, today, today).replaceAll(
+                        ":", " ") + ".txt"
+                    )
+                );
+                String clickerName = clicker.getClass().getName();
+                writer.write("SmartClicker has Begun! Selected: " + clickerName);
+                writer.write(System.lineSeparator());
+                writer.write("--------------------------------------------------------------");
+                writer.write(System.lineSeparator());
+                writer.flush(); // Ensure data is written to disk
+            } catch (IOException ex) {
                 ex.printStackTrace();
             }
 
-            if (!(clicker == null)){
-                System.out.println("Begin AC");
-                Runnable run = new RunnableExiter(clicker);
+            if (clicker != null) {
+                System.out.println("Begin Auto Clicking");
+                Runnable run = new ClickingThread(clicker);
                 Thread loopThread = new Thread(run);
                 loopThread.start();
             }
@@ -131,12 +121,13 @@ class GUI extends JFrame {
     class stopClicker implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
+            System.out.println("Stopping clicker.");
 
             try {
-                writer.write(System.getProperty( "line.separator" ));
+                writer.write(System.lineSeparator());
                 writer.close();
             } catch (Exception ex) {
-
+                System.out.println("Failed to close writer.");
             }
 
             clicker.stopClicking();
